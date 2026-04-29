@@ -18,6 +18,18 @@
       <div class="desktop-icons" id="desktop-icons" aria-live="polite"></div>
       <div class="window-layer" id="window-layer" aria-live="polite"></div>
     </main>
+    <nav class="taskbar" aria-label="Taskbar">
+      <button class="start-button" type="button" id="start-button">Modurili</button>
+      <div class="taskbar-apps" id="taskbar-apps"></div>
+      <time class="taskbar-clock" id="taskbar-clock"></time>
+    </nav>
+    <div class="start-menu is-hidden" id="start-menu">
+      <button type="button" data-start-app="all">All Works</button>
+      <button type="button" data-start-app="links">Links</button>
+    </div>
+    <noscript>
+      <p class="boot-error">JavaScriptを有効にしてください。</p>
+    </noscript>
 
     <script src="./script.js"></script>
   </body>

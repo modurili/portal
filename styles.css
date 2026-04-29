@@ -58,7 +58,7 @@ button {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  padding: 28px;
+  padding: 28px 28px 70px;
 }
 
 .desktop-icons {
@@ -87,9 +87,10 @@ button {
 }
 
 .desktop-icon:hover,
+.desktop-icon.is-selected,
 .desktop-icon:focus-visible {
-  background: rgba(255, 255, 255, 0.38);
-  border-color: rgba(158, 170, 163, 0.7);
+  background: rgba(255, 255, 255, 0.52);
+  border-color: rgba(29, 143, 104, 0.7);
   outline: 0;
 }
 
@@ -140,10 +141,15 @@ button {
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow);
   pointer-events: auto;
+  resize: both;
 }
 
 .window.is-hidden {
   display: none;
+}
+
+.window.is-maximized {
+  resize: none;
 }
 
 .window-titlebar {
@@ -508,6 +514,102 @@ button {
   border-color: var(--text);
 }
 
+.taskbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 6px 8px;
+  background: rgba(243, 247, 244, 0.9);
+  border-top: 1px solid var(--line-strong);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -10px 28px rgba(31, 46, 38, 0.1);
+}
+
+.start-button,
+.taskbar-app,
+.start-menu button {
+  min-height: 32px;
+  padding: 6px 12px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.start-button {
+  color: #fff;
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.taskbar-apps {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.taskbar-app {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskbar-app.is-active {
+  border-color: var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.taskbar-clock {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.start-menu {
+  position: fixed;
+  bottom: 54px;
+  left: 8px;
+  z-index: 1001;
+  display: grid;
+  width: 220px;
+  gap: 6px;
+  padding: 10px;
+  background: var(--window);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.start-menu.is-hidden {
+  display: none;
+}
+
+.start-menu button {
+  width: 100%;
+  text-align: left;
+}
+
+.boot-error {
+  position: fixed;
+  inset: 24px auto auto 24px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-soft);
+}
+
 .empty-message {
   margin: 8px 0;
   color: var(--muted);
@@ -547,6 +649,7 @@ button {
     width: 100% !important;
     height: auto !important;
     min-height: 420px;
+    resize: none;
   }
 
   .window-titlebar {
@@ -578,5 +681,14 @@ button {
   .file-type,
   .file-date {
     display: none;
+  }
+
+  .taskbar {
+    min-height: 52px;
+  }
+
+  .start-menu {
+    right: 8px;
+    width: auto;
   }
 }
