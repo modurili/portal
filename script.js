@@ -1,4 +1,4 @@
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1uHt1E4z-WI9wu2wbuG32mNBO2u4M8nCtMHVT92p6564/edit?usp=sharing";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQuKN-1KWEw6ZC251S2xzdYsh-wYIdi1TfePMUrg_KfJpHSK9n6knLhJyhHS-BNAzx45du84NZbK2v2/pub?gid=0&single=true&output=csv";
 
 const SAMPLE_WORKS = [
   {
