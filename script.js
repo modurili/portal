@@ -1,4 +1,6 @@
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQuKN-1KWEw6ZC251S2xzdYsh-wYIdi1TfePMUrg_KfJpHSK9n6knLhJyhHS-BNAzx45du84NZbK2v2/pub?gid=0&single=true&output=csv";
+const SHEET_CSV_URL = window.SHEET_CSV_URL || "https://docs.google.com/spreadsheets/d/e/2PACX-1vQuKN-1KWEw6ZC251S2xzdYsh-wYIdi1TfePMUrg_KfJpHSK9n6knLhJyhHS-BNAzx45du84NZbK2v2/pub?gid=0&single=true&output=csv";
+
+const THUMBNAIL_MODE = "screenshot"; // "screenshot" or "favicon"
 
 const SAMPLE_WORKS = [
   {
@@ -76,7 +78,7 @@ const SAMPLE_WORKS = [
 ];
 
 const ROOM_DETAILS = {
-  展示室: "まず見てほしい代表作を置く場所。",
+  展示室: "代表作や最初に見てほしいもの。",
   素材配布室: "YMM4素材、テンプレ、PNG素材など。",
   道具室: "サイト、拡張機能、プラグイン、便利ツール。",
   記録室: "note、制作メモ、試行錯誤のログ。",
@@ -89,32 +91,38 @@ const state = {
   works: [],
   activeRoom: "すべて",
   query: "",
+  selectedId: "",
 };
 
 const elements = {
-  roomMap: document.querySelector("#room-map"),
+  desktopIcons: document.querySelector("#desktop-icons"),
   roomFilters: document.querySelector("#room-filters"),
   workList: document.querySelector("#work-list"),
   featuredWorks: document.querySelector("#featured-works"),
+  workPreview: document.querySelector("#work-preview"),
   searchInput: document.querySelector("#search-input"),
   emptyMessage: document.querySelector("#empty-message"),
   totalCount: document.querySelector("#total-count"),
   featuredCount: document.querySelector("#featured-count"),
   roomCount: document.querySelector("#room-count"),
   sourceNote: document.querySelector("#source-note"),
-  year: document.querySelector("#year"),
+  clock: document.querySelector("#clock"),
 };
 
-function normalizeWork(work) {
+function normalizeWork(work, index) {
+  const description = clean(work.description || work.discription || work.desc);
+  const title = clean(work.title || work.name);
+
   return {
-    title: clean(work.title),
+    id: clean(work.id) || slugify(`${title}-${index}`),
+    title,
     room: clean(work.room) || "展示室",
-    type: clean(work.type),
-    url: clean(work.url),
+    type: clean(work.type) || "item",
+    url: clean(work.url || work.link),
     date: clean(work.date),
     tags: clean(work.tags),
-    description: clean(work.description),
-    thumbnail: clean(work.thumbnail),
+    description,
+    thumbnail: clean(work.thumbnail || work.thumb || work.image),
     featured: clean(work.featured).toUpperCase() === "TRUE",
     status: clean(work.status || "public").toLowerCase(),
   };
@@ -122,6 +130,13 @@ function normalizeWork(work) {
 
 function clean(value) {
   return String(value ?? "").trim();
+}
+
+function slugify(value) {
+  return clean(value)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function getRooms(works) {
@@ -144,6 +159,35 @@ function formatDate(dateText) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+function getHostname(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function getFaviconUrl(url) {
+  if (!url) return "";
+  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=64`;
+}
+
+function getAutoThumbnailUrl(work) {
+  if (work.thumbnail) return work.thumbnail;
+  if (!work.url || THUMBNAIL_MODE !== "screenshot") return "";
+  return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(work.url)}?w=640`;
+}
+
+function getFileLabel(work) {
+  const type = work.type.toLowerCase();
+  if (type.includes("note")) return "N";
+  if (type.includes("booth")) return "B";
+  if (type.includes("web")) return "W";
+  if (type.includes("素材")) return "S";
+  if (type.includes("拡張")) return "E";
+  return work.title.slice(0, 1).toUpperCase();
 }
 
 function parseCsv(csvText) {
@@ -189,7 +233,7 @@ function parseCsv(csvText) {
 
 async function loadWorks() {
   if (!SHEET_CSV_URL) {
-    elements.sourceNote.textContent = "サンプルデータを表示中";
+    elements.sourceNote.textContent = "sample data";
     return SAMPLE_WORKS.map(normalizeWork);
   }
 
@@ -197,79 +241,13 @@ async function loadWorks() {
     const response = await fetch(SHEET_CSV_URL);
     if (!response.ok) throw new Error(`CSV load failed: ${response.status}`);
     const csvText = await response.text();
-    elements.sourceNote.textContent = "Googleスプレッドシートから読み込み中";
+    elements.sourceNote.textContent = "google spreadsheet";
     return parseCsv(csvText).map(normalizeWork);
   } catch (error) {
     console.warn(error);
-    elements.sourceNote.textContent = "CSVを読めないためサンプルデータを表示中";
+    elements.sourceNote.textContent = "sample data / csv error";
     return SAMPLE_WORKS.map(normalizeWork);
   }
-}
-
-function renderRoomMap(works) {
-  const rooms = getRooms(works);
-  elements.roomMap.innerHTML = rooms
-    .map((room, index) => {
-      const count = works.filter((work) => work.room === room).length;
-      const description = ROOM_DETAILS[room] ?? "作品を分類して見つけやすくする場所。";
-      const activeClass = state.activeRoom === room ? " is-active" : "";
-
-      return `
-        <article class="room-card${activeClass}">
-          <button type="button" data-room="${escapeHtml(room)}" aria-label="${escapeHtml(room)}で絞り込む"></button>
-          <div class="room-meta">
-            <span class="room-number">${String(index + 1).padStart(2, "0")}</span>
-            <span>${count} items</span>
-          </div>
-          <div>
-            <h3>${escapeHtml(room)}</h3>
-            <p>${escapeHtml(description)}</p>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function renderFilters(works) {
-  const rooms = ["すべて", ...getRooms(works)];
-  elements.roomFilters.innerHTML = rooms
-    .map((room) => {
-      const activeClass = state.activeRoom === room ? " is-active" : "";
-      return `<button class="filter-button${activeClass}" type="button" data-room="${escapeHtml(room)}">${escapeHtml(room)}</button>`;
-    })
-    .join("");
-}
-
-function renderWorks(target, works) {
-  target.innerHTML = works.map(renderWorkCard).join("");
-}
-
-function renderWorkCard(work) {
-  const tags = getTags(work);
-  const initial = work.title.slice(0, 1).toUpperCase();
-  const thumbnail = work.thumbnail
-    ? `<img src="${escapeAttribute(work.thumbnail)}" alt="" loading="lazy" />`
-    : `<span>${escapeHtml(initial)}</span>`;
-
-  return `
-    <article class="work-card">
-      <div class="work-thumb">${thumbnail}</div>
-      <div class="work-body">
-        <div class="work-meta">
-          <span>${escapeHtml(work.room)}</span>
-          ${work.type ? `<span>${escapeHtml(work.type)}</span>` : ""}
-          ${work.date ? `<span>${escapeHtml(formatDate(work.date))}</span>` : ""}
-        </div>
-        <h3>${escapeHtml(work.title)}</h3>
-        <p class="work-description">${escapeHtml(work.description)}</p>
-        <ul class="tag-list">
-          ${tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("")}
-        </ul>
-        ${work.url ? `<a class="work-link" href="${escapeAttribute(work.url)}" target="_blank" rel="noopener">開く</a>` : ""}
-      </div>
-    </article>
-  `;
 }
 
 function filterWorks() {
@@ -281,22 +259,149 @@ function filterWorks() {
   });
 }
 
-function render() {
-  const publicWorks = state.works.filter((work) => work.status === "public");
-  const featured = publicWorks
+function renderDesktopIcons(works) {
+  const rooms = getRooms(works);
+  elements.desktopIcons.innerHTML = rooms
+    .map((room) => {
+      const count = works.filter((work) => work.room === room).length;
+      const activeClass = state.activeRoom === room ? " is-active" : "";
+      return `
+        <button class="desktop-icon${activeClass}" type="button" data-room="${escapeAttribute(room)}">
+          <span class="icon-symbol">${escapeHtml(room.slice(0, 1))}</span>
+          <span>${escapeHtml(room)}</span>
+          <small>${count} items</small>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderFilters(works) {
+  const rooms = ["すべて", ...getRooms(works)];
+  elements.roomFilters.innerHTML = rooms
+    .map((room) => {
+      const count = room === "すべて" ? works.length : works.filter((work) => work.room === room).length;
+      const activeClass = state.activeRoom === room ? " is-active" : "";
+      return `
+        <button class="folder-button${activeClass}" type="button" data-room="${escapeAttribute(room)}">
+          <span>${room === "すべて" ? "□" : "▣"}</span>
+          <span>${escapeHtml(room)}</span>
+          <small>${count}</small>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderFeatured(works) {
+  const featured = works
     .filter((work) => work.featured)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
+  const items = featured.length ? featured : works.slice(0, 3);
+
+  elements.featuredWorks.innerHTML = items.map(renderFeaturedCard).join("");
+}
+
+function renderFeaturedCard(work) {
+  return `
+    <article class="featured-card" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
+      ${renderThumbnail(work)}
+      <div class="featured-body">
+        <div class="meta-line">
+          <span>${escapeHtml(work.room)}</span>
+          <span>${escapeHtml(work.type)}</span>
+        </div>
+        <h3>${escapeHtml(work.title)}</h3>
+      </div>
+    </article>
+  `;
+}
+
+function renderWorkList(works) {
+  elements.workList.innerHTML = works.map(renderWorkRow).join("");
+}
+
+function renderWorkRow(work) {
+  const selectedClass = state.selectedId === work.id ? " is-selected" : "";
+  return `
+    <article class="file-row${selectedClass}" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
+      <span class="file-icon">${escapeHtml(getFileLabel(work))}</span>
+      <div class="file-title">
+        <strong>${escapeHtml(work.title)}</strong>
+        <small>${escapeHtml(work.description || ROOM_DETAILS[work.room] || "")}</small>
+      </div>
+      <span class="file-type">${escapeHtml(work.type)}</span>
+      <span class="file-date">${escapeHtml(formatDate(work.date))}</span>
+    </article>
+  `;
+}
+
+function renderThumbnail(work) {
+  const thumbnailUrl = getAutoThumbnailUrl(work);
+  const faviconUrl = getFaviconUrl(work.url);
+  const label = getFileLabel(work);
+
+  return `
+    <div class="thumb-frame${thumbnailUrl ? "" : " is-fallback"}">
+      ${
+        thumbnailUrl
+          ? `<img src="${escapeAttribute(thumbnailUrl)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('is-fallback'); this.remove();" />`
+          : ""
+      }
+      <span class="fallback-thumb">${escapeHtml(label)}</span>
+      ${
+        faviconUrl
+          ? `<span class="favicon-chip"><img src="${escapeAttribute(faviconUrl)}" alt="" loading="lazy" /></span>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+function renderPreview(work) {
+  if (!work) {
+    elements.workPreview.innerHTML = `<p class="preview-empty">作品を選ぶと詳細が表示されます。</p>`;
+    return;
+  }
+
+  const tags = getTags(work);
+  elements.workPreview.innerHTML = `
+    <article class="preview-card">
+      ${renderThumbnail(work)}
+      <div class="meta-line">
+        <span>${escapeHtml(work.room)}</span>
+        <span>${escapeHtml(work.type)}</span>
+        ${work.date ? `<span>${escapeHtml(formatDate(work.date))}</span>` : ""}
+      </div>
+      <h3>${escapeHtml(work.title)}</h3>
+      <p class="preview-description">${escapeHtml(work.description || "説明文は未設定です。")}</p>
+      ${
+        tags.length
+          ? `<ul class="tag-list">${tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("")}</ul>`
+          : ""
+      }
+      ${work.url ? `<a class="open-link" href="${escapeAttribute(work.url)}" target="_blank" rel="noopener">開く</a>` : ""}
+      ${work.url ? `<p class="preview-description">${escapeHtml(getHostname(work.url))}</p>` : ""}
+    </article>
+  `;
+}
+
+function render() {
+  const publicWorks = state.works.filter((work) => work.status === "public");
   const filtered = filterWorks().sort((a, b) => b.date.localeCompare(a.date));
+  const selected = publicWorks.find((work) => work.id === state.selectedId) || filtered[0] || publicWorks[0];
+  state.selectedId = selected?.id || "";
 
   elements.totalCount.textContent = publicWorks.length;
-  elements.featuredCount.textContent = featured.length;
+  elements.featuredCount.textContent = publicWorks.filter((work) => work.featured).length;
   elements.roomCount.textContent = getRooms(publicWorks).length;
 
-  renderRoomMap(publicWorks);
+  renderDesktopIcons(publicWorks);
   renderFilters(publicWorks);
-  renderWorks(elements.featuredWorks, featured.length ? featured : publicWorks.slice(0, 3));
-  renderWorks(elements.workList, filtered);
+  renderFeatured(publicWorks);
+  renderWorkList(filtered);
+  renderPreview(selected);
   elements.emptyMessage.hidden = filtered.length > 0;
 }
 
@@ -313,15 +418,33 @@ function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("`", "&#096;");
 }
 
+function selectWork(id) {
+  const work = state.works.find((item) => item.id === id);
+  if (!work) return;
+  state.selectedId = work.id;
+  render();
+}
+
 function bindEvents() {
   document.addEventListener("click", (event) => {
     const roomButton = event.target.closest("[data-room]");
-    if (!roomButton) return;
-    state.activeRoom = roomButton.dataset.room;
-    render();
-    if (roomButton.closest(".room-card")) {
-      document.querySelector("#works").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (roomButton) {
+      state.activeRoom = roomButton.dataset.room;
+      render();
+      document.querySelector("#explorer").scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
     }
+
+    const workItem = event.target.closest("[data-work-id]");
+    if (workItem) {
+      selectWork(workItem.dataset.workId);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    const workItem = event.target.closest("[data-work-id]");
+    if (workItem) selectWork(workItem.dataset.workId);
   });
 
   elements.searchInput.addEventListener("input", (event) => {
@@ -330,9 +453,17 @@ function bindEvents() {
   });
 }
 
+function updateClock() {
+  elements.clock.textContent = new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date());
+}
+
 async function init() {
-  elements.year.textContent = new Date().getFullYear();
   bindEvents();
+  updateClock();
+  setInterval(updateClock, 30000);
   state.works = (await loadWorks()).filter((work) => work.status === "public");
   render();
 }
