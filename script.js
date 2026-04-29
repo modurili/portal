@@ -40,6 +40,18 @@ const LINKS = [
   ["YouTube", "https://www.youtube.com/@modurili"],
 ];
 
+const APP_ICONS = {
+  all: "🗂",
+  folder: "📁",
+  links: "🌐",
+  booth: "🛍",
+  note: "📝",
+  github: "⌘",
+  youtube: "▶",
+  tools: "🧰",
+  assets: "🎞",
+};
+
 const state = {
   works: [],
   selectedIcon: "",
@@ -143,6 +155,17 @@ function getFileLabel(work) {
   return clean(work.title).slice(0, 1).toUpperCase() || "?";
 }
 
+function getRoomIcon(room) {
+  const text = clean(room).toLowerCase();
+  if (text.includes("booth")) return APP_ICONS.booth;
+  if (text.includes("note") || text.includes("記録")) return APP_ICONS.note;
+  if (text.includes("github")) return APP_ICONS.github;
+  if (text.includes("youtube")) return APP_ICONS.youtube;
+  if (text.includes("tool") || text.includes("道具")) return APP_ICONS.tools;
+  if (text.includes("素材") || text.includes("asset")) return APP_ICONS.assets;
+  return APP_ICONS.folder;
+}
+
 function parseCsv(csvText) {
   const rows = [];
   let row = [];
@@ -210,15 +233,15 @@ function getDesktopApps() {
   const folderApps = getRooms().map((room) => ({
     id: `folder-${slugify(room)}`,
     label: room,
-    icon: room.slice(0, 1),
+    icon: getRoomIcon(room),
     app: "explorer",
     room,
   }));
 
   return [
-    { id: "all", label: "All Works", icon: "W", app: "explorer", room: ALL_ROOM },
+    { id: "all", label: "All Works", icon: APP_ICONS.all, app: "explorer", room: ALL_ROOM },
     ...folderApps,
-    { id: "links", label: "Links", icon: "L", app: "links" },
+    { id: "links", label: "Links", icon: APP_ICONS.links, app: "links" },
   ];
 }
 
@@ -244,7 +267,7 @@ function openAppFromIcon(icon) {
 
 function openExplorer(room = ALL_ROOM) {
   const title = room === ALL_ROOM ? "All Works" : room;
-  const id = `explorer-${slugify(title) || "all"}`;
+  const id = "explorer";
   const windowEl = ensureWindow(id, title, renderExplorerWindow(room), {
     width: 900,
     height: 560,
@@ -252,7 +275,7 @@ function openExplorer(room = ALL_ROOM) {
     y: 56 + state.windows.size * 18,
   });
   bringToFront(windowEl);
-  bindExplorerWindow(windowEl, room);
+  bindExplorerWindow(windowEl);
 }
 
 function openLinks() {
@@ -269,6 +292,7 @@ function ensureWindow(id, title, content, rect) {
   const existing = state.windows.get(id);
   if (existing) {
     existing.classList.remove("is-hidden");
+    existing.dataset.windowTitle = title;
     existing.querySelector(".window-title").textContent = title;
     existing.querySelector(".window-content").innerHTML = content;
     updateTaskbar();
@@ -285,12 +309,12 @@ function ensureWindow(id, title, content, rect) {
   windowEl.style.top = `${rect.y}px`;
   windowEl.innerHTML = `
     <div class="window-titlebar" data-drag-handle>
+      <span class="window-title">${escapeHtml(title)}</span>
       <div class="window-controls">
-        <button class="window-control close" type="button" data-window-close aria-label="Close"></button>
         <button class="window-control minimize" type="button" data-window-minimize aria-label="Minimize"></button>
         <button class="window-control zoom" type="button" data-window-maximize aria-label="Maximize"></button>
+        <button class="window-control close" type="button" data-window-close aria-label="Close"></button>
       </div>
-      <span class="window-title">${escapeHtml(title)}</span>
     </div>
     <div class="window-content">${content}</div>
   `;
@@ -310,13 +334,14 @@ function renderExplorerWindow(room) {
   return `
     <div class="explorer-layout" data-explorer-room="${escapeAttribute(room)}">
       <aside class="sidebar">
+        <div class="tree-header">Quick access</div>
         <div class="folder-list">
           ${rooms
             .map((item) => {
               const label = item === ALL_ROOM ? "All Works" : item;
               return `
                 <button class="folder-button${item === room ? " is-active" : ""}" type="button" data-folder="${escapeAttribute(item)}">
-                  <span>${item === ALL_ROOM ? "□" : "▣"}</span>
+                  <span class="folder-glyph">${item === ALL_ROOM ? APP_ICONS.all : APP_ICONS.folder}</span>
                   <span>${escapeHtml(label)}</span>
                   <small>${filterWorks(item, "").length}</small>
                 </button>
@@ -326,8 +351,16 @@ function renderExplorerWindow(room) {
         </div>
       </aside>
       <section class="file-area">
+        <div class="command-bar">
+          <button type="button" data-folder="${escapeAttribute(ALL_ROOM)}">Home</button>
+          <button type="button" data-refresh>Refresh</button>
+        </div>
         <div class="file-toolbar">
-          <div class="path-box">Modurili / ${escapeHtml(room === ALL_ROOM ? "All Works" : room)}</div>
+          <div class="path-box">
+            <span>Modurili</span>
+            <span>›</span>
+            <span>${escapeHtml(room === ALL_ROOM ? "All Works" : room)}</span>
+          </div>
           <input class="search-box" type="search" placeholder="Search" data-search />
         </div>
         <div class="file-list" data-file-list>
@@ -340,22 +373,27 @@ function renderExplorerWindow(room) {
 }
 
 function bindExplorerWindow(windowEl, room) {
-  const layout = windowEl.querySelector("[data-explorer-room]");
-  const search = windowEl.querySelector("[data-search]");
-  const fileList = windowEl.querySelector("[data-file-list]");
-  const preview = windowEl.querySelector("[data-preview]");
+  if (windowEl.dataset.explorerBound === "true") return;
+  windowEl.dataset.explorerBound = "true";
 
-  layout.addEventListener("dblclick", (event) => {
+  windowEl.addEventListener("dblclick", (event) => {
     const row = event.target.closest("[data-work-id]");
     if (!row) return;
     const work = getPublicWorks().find((item) => item.id === row.dataset.workId);
     if (work?.url) window.open(work.url, "_blank", "noopener");
   });
 
-  layout.addEventListener("click", (event) => {
+  windowEl.addEventListener("click", (event) => {
     const folder = event.target.closest("[data-folder]");
     if (folder) {
-      openExplorer(folder.dataset.folder);
+      navigateExplorer(windowEl, folder.dataset.folder);
+      return;
+    }
+
+    const refresh = event.target.closest("[data-refresh]");
+    if (refresh) {
+      const room = windowEl.querySelector("[data-explorer-room]")?.dataset.explorerRoom || ALL_ROOM;
+      navigateExplorer(windowEl, room);
       return;
     }
 
@@ -364,17 +402,32 @@ function bindExplorerWindow(windowEl, room) {
     const work = getPublicWorks().find((item) => item.id === row.dataset.workId);
     if (!work) return;
     state.selectedId = work.id;
+    const fileList = windowEl.querySelector("[data-file-list]");
+    const preview = windowEl.querySelector("[data-preview]");
     fileList.querySelectorAll(".file-row").forEach((item) => item.classList.toggle("is-selected", item.dataset.workId === work.id));
     preview.innerHTML = renderPreview(work);
   });
 
-  search.addEventListener("input", () => {
+  windowEl.addEventListener("input", (event) => {
+    const search = event.target.closest("[data-search]");
+    if (!search) return;
+    const room = windowEl.querySelector("[data-explorer-room]")?.dataset.explorerRoom || ALL_ROOM;
+    const fileList = windowEl.querySelector("[data-file-list]");
+    const preview = windowEl.querySelector("[data-preview]");
     const works = filterWorks(room, search.value);
     const selected = works[0];
     state.selectedId = selected?.id || "";
     fileList.innerHTML = works.map(renderFileRow).join("") || `<p class="empty-message">No items.</p>`;
     preview.innerHTML = renderPreview(selected);
   });
+}
+
+function navigateExplorer(windowEl, room) {
+  const title = room === ALL_ROOM ? "All Works" : room;
+  windowEl.dataset.windowTitle = title;
+  windowEl.querySelector(".window-title").textContent = title;
+  windowEl.querySelector(".window-content").innerHTML = renderExplorerWindow(room);
+  updateTaskbar();
 }
 
 function renderFileRow(work) {
@@ -537,8 +590,11 @@ function bindEvents() {
   document.addEventListener("click", (event) => {
     const icon = event.target.closest(".desktop-icon");
     if (icon) {
+      if (event.detail > 1) return;
       state.selectedIcon = icon.dataset.iconId;
-      renderDesktop();
+      elements.desktopIcons.querySelectorAll(".desktop-icon").forEach((item) => {
+        item.classList.toggle("is-selected", item === icon);
+      });
       return;
     }
 
@@ -549,7 +605,9 @@ function bindEvents() {
 
   document.addEventListener("dblclick", (event) => {
     const icon = event.target.closest(".desktop-icon");
-    if (icon) openAppFromIcon(icon);
+    if (!icon) return;
+    event.preventDefault();
+    openAppFromIcon(icon);
   });
 
   elements.startButton.addEventListener("click", () => {

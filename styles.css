@@ -96,15 +96,14 @@ button {
 
 .desktop-icon-image {
   display: grid;
-  width: 54px;
-  height: 48px;
+  width: 58px;
+  height: 52px;
   place-items: center;
-  color: var(--accent);
-  background: linear-gradient(180deg, #ffffff 0 32%, var(--accent-soft) 32% 100%);
-  border: 1px solid var(--line-strong);
-  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(158, 170, 163, 0.55);
+  border-radius: 8px;
   box-shadow: var(--shadow-soft);
-  font-size: 18px;
+  font-size: 28px;
   font-weight: 800;
 }
 
@@ -157,7 +156,7 @@ button {
   min-height: 34px;
   align-items: center;
   gap: 10px;
-  padding: 7px 10px;
+  padding: 0 0 0 10px;
   color: var(--muted);
   background: linear-gradient(180deg, #ffffff, #edf2ee);
   border-bottom: 1px solid var(--line);
@@ -172,32 +171,63 @@ button {
 
 .window-controls {
   display: inline-flex;
-  gap: 6px;
+  align-self: stretch;
+  margin-left: auto;
 }
 
 .window-control {
-  width: 11px;
-  height: 11px;
+  display: grid;
+  width: 45px;
+  height: 34px;
+  place-items: center;
   padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid transparent;
+  border-radius: 0;
   cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .window-control.close {
-  background: var(--danger);
+  background: transparent;
 }
 
 .window-control.minimize {
-  background: var(--warn);
+  background: transparent;
 }
 
 .window-control.zoom {
-  background: var(--ok);
+  background: transparent;
+}
+
+.window-control.minimize::before {
+  content: "−";
+}
+
+.window-control.zoom::before {
+  content: "□";
+}
+
+.window-control.close::before {
+  content: "×";
+  font-size: 17px;
+}
+
+.window-control:hover {
+  background: #e7ece8;
+}
+
+.window-control.close:hover {
+  color: #fff;
+  background: #c42b1c;
 }
 
 .window-title {
   overflow: hidden;
+  flex: 1;
   font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -230,6 +260,13 @@ button {
   overflow: auto;
   border-left: 1px solid var(--line);
   padding: 14px;
+}
+
+.tree-header {
+  padding: 12px 12px 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .folder-list {
@@ -266,12 +303,41 @@ button {
   font-size: 11px;
 }
 
+.folder-glyph {
+  width: 22px;
+  text-align: center;
+}
+
 .file-area {
   display: grid;
   grid-template-rows: auto 1fr;
   min-width: 0;
   min-height: 0;
   padding: 12px;
+}
+
+.command-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.command-bar button {
+  min-height: 30px;
+  padding: 5px 10px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.command-bar button:hover {
+  border-color: var(--line-strong);
 }
 
 .file-toolbar {
@@ -282,6 +348,9 @@ button {
 }
 
 .path-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
