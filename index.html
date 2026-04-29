@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="もづりぃの作品、素材、ツール、記事、外部リンクをまとめたポータルサイト。"
+    />
+    <title>もづりぃ ポータル</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="トップへ">
+        <span class="brand-mark">M</span>
+        <span>もづりぃ</span>
+      </a>
+      <nav class="header-nav" aria-label="メインナビゲーション">
+        <a href="#map">館内マップ</a>
+        <a href="#works">作品</a>
+        <a href="#links">リンク</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="intro-section" aria-labelledby="intro-title">
+        <div class="intro-copy">
+          <p class="eyebrow">Modurili Portal</p>
+          <h1 id="intro-title">編集と、素材と、ちょっと便利なもの。</h1>
+          <p class="lead">
+            作ったもの、配布したもの、試したことへの入口をまとめています。
+          </p>
+        </div>
+
+        <div class="status-panel" aria-label="サイト情報">
+          <div>
+            <span class="status-number" id="total-count">0</span>
+            <span class="status-label">公開中</span>
+          </div>
+          <div>
+            <span class="status-number" id="featured-count">0</span>
+            <span class="status-label">おすすめ</span>
+          </div>
+          <div>
+            <span class="status-number" id="room-count">0</span>
+            <span class="status-label">部屋</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="map-section" id="map" aria-labelledby="map-title">
+        <div class="section-heading">
+          <p class="eyebrow">Museum Map</p>
+          <h2 id="map-title">館内マップ</h2>
+        </div>
+        <div class="museum-map" id="room-map" aria-live="polite"></div>
+      </section>
+
+      <section class="featured-section" aria-labelledby="featured-title">
+        <div class="section-heading">
+          <p class="eyebrow">Featured</p>
+          <h2 id="featured-title">まず見る</h2>
+        </div>
+        <div class="work-grid featured-grid" id="featured-works" aria-live="polite"></div>
+      </section>
+
+      <section class="works-section" id="works" aria-labelledby="works-title">
+        <div class="section-heading section-heading-row">
+          <div>
+            <p class="eyebrow">Archive</p>
+            <h2 id="works-title">作品一覧</h2>
+          </div>
+          <p class="source-note" id="source-note">サンプルデータを表示中</p>
+        </div>
+
+        <div class="controls" aria-label="作品の絞り込み">
+          <label class="search-box">
+            <span>検索</span>
+            <input id="search-input" type="search" placeholder="タイトル、タグ、説明で探す" />
+          </label>
+          <div class="filter-group" id="room-filters" aria-label="部屋で絞り込み"></div>
+        </div>
+
+        <div class="work-grid" id="work-list" aria-live="polite"></div>
+        <p class="empty-message" id="empty-message" hidden>
+          条件に合う作品が見つかりませんでした。
+        </p>
+      </section>
+
+      <section class="links-section" id="links" aria-labelledby="links-title">
+        <div class="section-heading">
+          <p class="eyebrow">Links</p>
+          <h2 id="links-title">外部リンク</h2>
+        </div>
+        <div class="link-grid">
+          <a href="https://x.com/modurili" target="_blank" rel="noopener">X</a>
+          <a href="https://note.com/modurili" target="_blank" rel="noopener">note</a>
+          <a href="https://modurili.booth.pm/" target="_blank" rel="noopener">BOOTH</a>
+          <a href="https://github.com/modurili" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; <span id="year"></span> もづりぃ</p>
+      <a href="#top">上に戻る</a>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
