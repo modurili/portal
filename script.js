@@ -1,122 +1,71 @@
-const SHEET_CSV_URL = window.SHEET_CSV_URL || "https://docs.google.com/spreadsheets/d/e/2PACX-1vQuKN-1KWEw6ZC251S2xzdYsh-wYIdi1TfePMUrg_KfJpHSK9n6knLhJyhHS-BNAzx45du84NZbK2v2/pub?gid=0&single=true&output=csv";
+const SHEET_CSV_URL =
+  window.SHEET_CSV_URL ||
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQuKN-1KWEw6ZC251S2xzdYsh-wYIdi1TfePMUrg_KfJpHSK9n6knLhJyhHS-BNAzx45du84NZbK2v2/pub?gid=0&single=true&output=csv";
 
-const THUMBNAIL_MODE = "screenshot"; // "screenshot" or "favicon"
+const THUMBNAIL_MODE = "screenshot";
 
 const SAMPLE_WORKS = [
   {
     title: "YMM4 Plugin Catalog",
-    room: "道具室",
+    room: "道具",
     type: "Webサイト",
     url: "https://modurili.github.io/YMM4Plugin/",
     date: "2026-03-23",
-    tags: "YMM4,プラグイン,カタログ,AI",
-    description: "YMM4プラグインを一覧で検索、閲覧できるカタログサイト。",
+    tags: "YMM4,プラグイン,カタログ,GitHub",
+    description: "YMM4プラグインを検索、閲覧できるカタログサイト。",
     thumbnail: "",
     featured: "TRUE",
-    status: "public",
-  },
-  {
-    title: "日本語検索ワード自動英訳拡張機能",
-    room: "道具室",
-    type: "拡張機能",
-    url: "https://note.com/modurili/n/n50ffd1fa8375",
-    date: "2026-01-27",
-    tags: "拡張機能,検索,AI,配布",
-    description: "日本語の検索ワードを英語にして検索するChrome拡張機能。",
-    thumbnail: "",
-    featured: "TRUE",
-    status: "public",
-  },
-  {
-    title: "テロップアニメーション30選",
-    room: "素材配布室",
-    type: "YMM4素材",
-    url: "https://modurili.booth.pm/items/6058221",
-    date: "2024-08-31",
-    tags: "YMM4,テロップ,テンプレート,BOOTH",
-    description: "YMM4向けテロップアニメーションのテンプレート集。",
-    thumbnail: "",
-    featured: "TRUE",
-    status: "public",
-  },
-  {
-    title: "超キラキラさせる素材440種",
-    room: "素材配布室",
-    type: "YMM4素材",
-    url: "https://modurili.booth.pm/items/6527444",
-    date: "2025-01-28",
-    tags: "YMM4,素材,PNG,BOOTH",
-    description: "動画やサムネをきらっとさせるPNG素材とYMM4プロジェクト。",
-    thumbnail: "",
-    featured: "FALSE",
-    status: "public",
-  },
-  {
-    title: "YMM4 Plugin Catalogを作った話",
-    room: "記録室",
-    type: "note",
-    url: "https://note.com/modurili/n/n4ade1b49c962",
-    date: "2026-03-23",
-    tags: "note,YMM4,制作記録,AI",
-    description: "プラグイン一覧サイトをAIで作った制作メモ。",
-    thumbnail: "",
-    featured: "FALSE",
     status: "public",
   },
   {
     title: "もづりぃショップ",
-    room: "売店",
-    type: "BOOTH",
+    room: "BOOTH",
+    type: "ショップ",
     url: "https://modurili.booth.pm/",
-    date: "2024-01-01",
-    tags: "BOOTH,素材,グッズ,配布",
-    description: "YMM4素材、テンプレート、グッズなどの配布場所。",
+    date: "",
+    tags: "BOOTH,YMM4,素材,テンプレ",
+    description: "YMM4素材やテンプレートの配布場所。",
     thumbnail: "",
-    featured: "FALSE",
+    featured: "TRUE",
     status: "public",
   },
 ];
 
-const ROOM_DETAILS = {
-  展示室: "代表作や最初に見てほしいもの。",
-  素材配布室: "YMM4素材、テンプレ、PNG素材など。",
-  道具室: "サイト、拡張機能、プラグイン、便利ツール。",
-  記録室: "note、制作メモ、試行錯誤のログ。",
-  売店: "BOOTH、グッズ、有料素材への入口。",
-  リンク室: "SNS、動画、各種プロフィールへの入口。",
-  実験室: "試作、検証、まだ分類しにくいもの。",
-};
+const EXTERNAL_APPS = [
+  { id: "links", label: "Links", icon: "↗", app: "links" },
+  { id: "all", label: "All Works", icon: "＊", app: "explorer", room: "すべて" },
+];
+
+const LINKS = [
+  ["X", "https://x.com/modurili"],
+  ["note", "https://note.com/modurili"],
+  ["BOOTH", "https://modurili.booth.pm/"],
+  ["GitHub", "https://github.com/modurili"],
+  ["YouTube", "https://www.youtube.com/@modurili"],
+];
 
 const state = {
   works: [],
   activeRoom: "すべて",
   query: "",
   selectedId: "",
+  windows: new Map(),
+  zIndex: 10,
 };
 
 const elements = {
   desktopIcons: document.querySelector("#desktop-icons"),
-  roomFilters: document.querySelector("#room-filters"),
-  workList: document.querySelector("#work-list"),
-  featuredWorks: document.querySelector("#featured-works"),
-  workPreview: document.querySelector("#work-preview"),
-  searchInput: document.querySelector("#search-input"),
-  emptyMessage: document.querySelector("#empty-message"),
-  totalCount: document.querySelector("#total-count"),
-  featuredCount: document.querySelector("#featured-count"),
-  roomCount: document.querySelector("#room-count"),
-  sourceNote: document.querySelector("#source-note"),
-  clock: document.querySelector("#clock"),
+  windowLayer: document.querySelector("#window-layer"),
 };
 
 function normalizeWork(work, index) {
-  const description = clean(work.description || work.discription || work.desc);
   const title = clean(work.title || work.name);
+  const description = clean(work.description || work.discription || work.desc);
 
   return {
     id: clean(work.id) || slugify(`${title}-${index}`),
     title,
-    room: clean(work.room) || "展示室",
+    room: clean(work.room) || "作品",
     type: clean(work.type) || "item",
     url: clean(work.url || work.link),
     date: clean(work.date),
@@ -137,6 +86,10 @@ function slugify(value) {
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function getPublicWorks() {
+  return state.works.filter((work) => work.status === "public" && work.title);
 }
 
 function getRooms(works) {
@@ -181,12 +134,14 @@ function getAutoThumbnailUrl(work) {
 }
 
 function getFileLabel(work) {
-  const type = work.type.toLowerCase();
-  if (type.includes("note")) return "N";
-  if (type.includes("booth")) return "B";
-  if (type.includes("web")) return "W";
-  if (type.includes("素材")) return "S";
-  if (type.includes("拡張")) return "E";
+  const text = `${work.type} ${work.room}`.toLowerCase();
+  if (text.includes("note")) return "N";
+  if (text.includes("booth")) return "B";
+  if (text.includes("github")) return "G";
+  if (text.includes("youtube")) return "Y";
+  if (text.includes("web")) return "W";
+  if (text.includes("素材")) return "S";
+  if (text.includes("拡張")) return "E";
   return work.title.slice(0, 1).toUpperCase();
 }
 
@@ -232,107 +187,207 @@ function parseCsv(csvText) {
 }
 
 async function loadWorks() {
-  if (!SHEET_CSV_URL) {
-    elements.sourceNote.textContent = "sample data";
-    return SAMPLE_WORKS.map(normalizeWork);
-  }
+  if (!SHEET_CSV_URL) return SAMPLE_WORKS.map(normalizeWork);
 
   try {
     const response = await fetch(SHEET_CSV_URL);
     if (!response.ok) throw new Error(`CSV load failed: ${response.status}`);
-    const csvText = await response.text();
-    elements.sourceNote.textContent = "google spreadsheet";
-    return parseCsv(csvText).map(normalizeWork);
+    return parseCsv(await response.text()).map(normalizeWork);
   } catch (error) {
     console.warn(error);
-    elements.sourceNote.textContent = "sample data / csv error";
     return SAMPLE_WORKS.map(normalizeWork);
   }
 }
 
-function filterWorks() {
-  const query = state.query.toLowerCase();
-  return state.works.filter((work) => {
-    const roomMatches = state.activeRoom === "すべて" || work.room === state.activeRoom;
-    const searchable = `${work.title} ${work.room} ${work.type} ${work.description} ${work.tags}`.toLowerCase();
-    return roomMatches && searchable.includes(query);
+function filterWorks(room, query) {
+  const q = query.toLowerCase();
+  return getPublicWorks()
+    .filter((work) => room === "すべて" || work.room === room)
+    .filter((work) => `${work.title} ${work.room} ${work.type} ${work.description} ${work.tags}`.toLowerCase().includes(q))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function renderDesktop() {
+  const works = getPublicWorks();
+  const roomApps = getRooms(works).map((room) => ({
+    id: `room-${slugify(room)}`,
+    label: room,
+    icon: room.slice(0, 1),
+    app: "explorer",
+    room,
+  }));
+  const apps = [...roomApps, ...EXTERNAL_APPS];
+
+  elements.desktopIcons.innerHTML = apps
+    .map(
+      (app) => `
+        <button class="desktop-icon" type="button" data-app="${escapeAttribute(app.app)}" data-room="${escapeAttribute(app.room || "")}">
+          <span class="desktop-icon-image">${escapeHtml(app.icon)}</span>
+          <span class="desktop-icon-label">${escapeHtml(app.label)}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function openExplorer(room = "すべて") {
+  state.activeRoom = room;
+  const id = `explorer-${slugify(room) || "all"}`;
+  const windowEl = ensureWindow(id, `${room}.explorer`, renderExplorerWindow(room), {
+    width: 880,
+    height: 560,
+    x: 150,
+    y: 70,
   });
+  bringToFront(windowEl);
+  bindExplorerWindow(windowEl, room);
 }
 
-function renderDesktopIcons(works) {
-  const rooms = getRooms(works);
-  elements.desktopIcons.innerHTML = rooms
-    .map((room) => {
-      const count = works.filter((work) => work.room === room).length;
-      const activeClass = state.activeRoom === room ? " is-active" : "";
-      return `
-        <button class="desktop-icon${activeClass}" type="button" data-room="${escapeAttribute(room)}">
-          <span class="icon-symbol">${escapeHtml(room.slice(0, 1))}</span>
-          <span>${escapeHtml(room)}</span>
-          <small>${count} items</small>
-        </button>
-      `;
-    })
-    .join("");
+function openLinks() {
+  const windowEl = ensureWindow("links", "links.app", renderLinksWindow(), {
+    width: 440,
+    height: 330,
+    x: 210,
+    y: 120,
+  });
+  bringToFront(windowEl);
 }
 
-function renderFilters(works) {
-  const rooms = ["すべて", ...getRooms(works)];
-  elements.roomFilters.innerHTML = rooms
-    .map((room) => {
-      const count = room === "すべて" ? works.length : works.filter((work) => work.room === room).length;
-      const activeClass = state.activeRoom === room ? " is-active" : "";
-      return `
-        <button class="folder-button${activeClass}" type="button" data-room="${escapeAttribute(room)}">
-          <span>${room === "すべて" ? "□" : "▣"}</span>
-          <span>${escapeHtml(room)}</span>
-          <small>${count}</small>
-        </button>
-      `;
-    })
-    .join("");
-}
+function ensureWindow(id, title, content, rect) {
+  const existing = state.windows.get(id);
+  if (existing) {
+    existing.classList.remove("is-hidden");
+    existing.querySelector(".window-title").textContent = title;
+    existing.querySelector(".window-content").innerHTML = content;
+    return existing;
+  }
 
-function renderFeatured(works) {
-  const featured = works
-    .filter((work) => work.featured)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 3);
-  const items = featured.length ? featured : works.slice(0, 3);
-
-  elements.featuredWorks.innerHTML = items.map(renderFeaturedCard).join("");
-}
-
-function renderFeaturedCard(work) {
-  return `
-    <article class="featured-card" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
-      ${renderThumbnail(work)}
-      <div class="featured-body">
-        <div class="meta-line">
-          <span>${escapeHtml(work.room)}</span>
-          <span>${escapeHtml(work.type)}</span>
-        </div>
-        <h3>${escapeHtml(work.title)}</h3>
+  const windowEl = document.createElement("section");
+  windowEl.className = "window";
+  windowEl.dataset.windowId = id;
+  windowEl.style.width = `${rect.width}px`;
+  windowEl.style.height = `${rect.height}px`;
+  windowEl.style.left = `${rect.x}px`;
+  windowEl.style.top = `${rect.y}px`;
+  windowEl.innerHTML = `
+    <div class="window-titlebar" data-drag-handle>
+      <div class="window-controls">
+        <button class="window-control close" type="button" data-window-close aria-label="閉じる"></button>
+        <button class="window-control minimize" type="button" data-window-hide aria-label="隠す"></button>
+        <button class="window-control zoom" type="button" data-window-front aria-label="前面へ"></button>
       </div>
-    </article>
+      <span class="window-title">${escapeHtml(title)}</span>
+    </div>
+    <div class="window-content">${content}</div>
+  `;
+  elements.windowLayer.append(windowEl);
+  state.windows.set(id, windowEl);
+  makeDraggable(windowEl);
+  return windowEl;
+}
+
+function renderExplorerWindow(room) {
+  const rooms = ["すべて", ...getRooms(getPublicWorks())];
+  const works = filterWorks(room, "");
+  const selected = works.find((work) => work.id === state.selectedId) || works[0];
+  state.selectedId = selected?.id || "";
+
+  return `
+    <div class="explorer-layout" data-explorer-room="${escapeAttribute(room)}">
+      <aside class="sidebar">
+        <div class="folder-list">
+          ${rooms
+            .map(
+              (item) => `
+                <button class="folder-button${item === room ? " is-active" : ""}" type="button" data-folder="${escapeAttribute(item)}">
+                  <span>${item === "すべて" ? "□" : "▣"}</span>
+                  <span>${escapeHtml(item)}</span>
+                  <small>${filterWorks(item, "").length}</small>
+                </button>
+              `,
+            )
+            .join("")}
+        </div>
+      </aside>
+      <section class="file-area">
+        <div class="file-toolbar">
+          <div class="path-box">Modurili / ${escapeHtml(room)}</div>
+          <input class="search-box" type="search" placeholder="Search" data-search />
+        </div>
+        <div class="file-list" data-file-list>
+          ${works.map(renderFileRow).join("") || `<p class="empty-message">見つかりませんでした。</p>`}
+        </div>
+      </section>
+      <aside class="preview-pane" data-preview>
+        ${renderPreview(selected)}
+      </aside>
+    </div>
   `;
 }
 
-function renderWorkList(works) {
-  elements.workList.innerHTML = works.map(renderWorkRow).join("");
+function bindExplorerWindow(windowEl, room) {
+  const layout = windowEl.querySelector("[data-explorer-room]");
+  const search = windowEl.querySelector("[data-search]");
+  const fileList = windowEl.querySelector("[data-file-list]");
+  const preview = windowEl.querySelector("[data-preview]");
+
+  layout.addEventListener("click", (event) => {
+    const folder = event.target.closest("[data-folder]");
+    if (folder) {
+      openExplorer(folder.dataset.folder);
+      return;
+    }
+
+    const row = event.target.closest("[data-work-id]");
+    if (!row) return;
+    const work = getPublicWorks().find((item) => item.id === row.dataset.workId);
+    if (!work) return;
+    state.selectedId = work.id;
+    fileList.querySelectorAll(".file-row").forEach((item) => item.classList.toggle("is-selected", item.dataset.workId === work.id));
+    preview.innerHTML = renderPreview(work);
+  });
+
+  search.addEventListener("input", () => {
+    const works = filterWorks(room, search.value.trim());
+    const selected = works[0];
+    state.selectedId = selected?.id || "";
+    fileList.innerHTML = works.map(renderFileRow).join("") || `<p class="empty-message">見つかりませんでした。</p>`;
+    preview.innerHTML = renderPreview(selected);
+  });
 }
 
-function renderWorkRow(work) {
+function renderFileRow(work) {
   const selectedClass = state.selectedId === work.id ? " is-selected" : "";
   return `
     <article class="file-row${selectedClass}" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
       <span class="file-icon">${escapeHtml(getFileLabel(work))}</span>
       <div class="file-title">
         <strong>${escapeHtml(work.title)}</strong>
-        <small>${escapeHtml(work.description || ROOM_DETAILS[work.room] || "")}</small>
+        <small>${escapeHtml(work.description || getHostname(work.url))}</small>
       </div>
       <span class="file-type">${escapeHtml(work.type)}</span>
       <span class="file-date">${escapeHtml(formatDate(work.date))}</span>
+    </article>
+  `;
+}
+
+function renderPreview(work) {
+  if (!work) return `<p class="preview-description">作品を選択してください。</p>`;
+  const tags = getTags(work);
+
+  return `
+    <article class="preview-card">
+      ${renderThumbnail(work)}
+      <div class="meta-line">
+        <span>${escapeHtml(work.room)}</span>
+        <span>${escapeHtml(work.type)}</span>
+        ${work.date ? `<span>${escapeHtml(formatDate(work.date))}</span>` : ""}
+      </div>
+      <h2>${escapeHtml(work.title)}</h2>
+      <p class="preview-description">${escapeHtml(work.description || "説明文は未設定です。")}</p>
+      ${tags.length ? `<ul class="tag-list">${tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("")}</ul>` : ""}
+      ${work.url ? `<a class="open-link" href="${escapeAttribute(work.url)}" target="_blank" rel="noopener">Open</a>` : ""}
+      ${work.url ? `<p class="preview-host">${escapeHtml(getHostname(work.url))}</p>` : ""}
     </article>
   `;
 }
@@ -350,59 +405,96 @@ function renderThumbnail(work) {
           : ""
       }
       <span class="fallback-thumb">${escapeHtml(label)}</span>
-      ${
-        faviconUrl
-          ? `<span class="favicon-chip"><img src="${escapeAttribute(faviconUrl)}" alt="" loading="lazy" /></span>`
-          : ""
-      }
+      ${faviconUrl ? `<span class="favicon-chip"><img src="${escapeAttribute(faviconUrl)}" alt="" loading="lazy" /></span>` : ""}
     </div>
   `;
 }
 
-function renderPreview(work) {
-  if (!work) {
-    elements.workPreview.innerHTML = `<p class="preview-empty">作品を選ぶと詳細が表示されます。</p>`;
-    return;
-  }
-
-  const tags = getTags(work);
-  elements.workPreview.innerHTML = `
-    <article class="preview-card">
-      ${renderThumbnail(work)}
-      <div class="meta-line">
-        <span>${escapeHtml(work.room)}</span>
-        <span>${escapeHtml(work.type)}</span>
-        ${work.date ? `<span>${escapeHtml(formatDate(work.date))}</span>` : ""}
-      </div>
-      <h3>${escapeHtml(work.title)}</h3>
-      <p class="preview-description">${escapeHtml(work.description || "説明文は未設定です。")}</p>
-      ${
-        tags.length
-          ? `<ul class="tag-list">${tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("")}</ul>`
-          : ""
-      }
-      ${work.url ? `<a class="open-link" href="${escapeAttribute(work.url)}" target="_blank" rel="noopener">開く</a>` : ""}
-      ${work.url ? `<p class="preview-description">${escapeHtml(getHostname(work.url))}</p>` : ""}
-    </article>
+function renderLinksWindow() {
+  return `
+    <div class="link-grid">
+      ${LINKS.map(([label, url]) => `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`).join("")}
+    </div>
   `;
 }
 
-function render() {
-  const publicWorks = state.works.filter((work) => work.status === "public");
-  const filtered = filterWorks().sort((a, b) => b.date.localeCompare(a.date));
-  const selected = publicWorks.find((work) => work.id === state.selectedId) || filtered[0] || publicWorks[0];
-  state.selectedId = selected?.id || "";
+function makeDraggable(windowEl) {
+  const handle = windowEl.querySelector("[data-drag-handle]");
+  let dragging = null;
 
-  elements.totalCount.textContent = publicWorks.length;
-  elements.featuredCount.textContent = publicWorks.filter((work) => work.featured).length;
-  elements.roomCount.textContent = getRooms(publicWorks).length;
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    if (window.matchMedia("(max-width: 820px)").matches) return;
 
-  renderDesktopIcons(publicWorks);
-  renderFilters(publicWorks);
-  renderFeatured(publicWorks);
-  renderWorkList(filtered);
-  renderPreview(selected);
-  elements.emptyMessage.hidden = filtered.length > 0;
+    bringToFront(windowEl);
+    const rect = windowEl.getBoundingClientRect();
+    dragging = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: rect.left,
+      top: rect.top,
+    };
+    windowEl.classList.add("is-dragging");
+    handle.setPointerCapture(event.pointerId);
+  });
+
+  handle.addEventListener("pointermove", (event) => {
+    if (!dragging || event.pointerId !== dragging.pointerId) return;
+    const nextLeft = dragging.left + event.clientX - dragging.startX;
+    const nextTop = dragging.top + event.clientY - dragging.startY;
+    moveWindow(windowEl, nextLeft, nextTop);
+  });
+
+  handle.addEventListener("pointerup", (event) => {
+    if (!dragging || event.pointerId !== dragging.pointerId) return;
+    dragging = null;
+    windowEl.classList.remove("is-dragging");
+  });
+
+  windowEl.addEventListener("pointerdown", () => bringToFront(windowEl));
+}
+
+function moveWindow(windowEl, left, top) {
+  const maxLeft = Math.max(0, window.innerWidth - windowEl.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - windowEl.offsetHeight);
+  windowEl.style.left = `${Math.min(Math.max(0, left), maxLeft)}px`;
+  windowEl.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
+}
+
+function bringToFront(windowEl) {
+  state.zIndex += 1;
+  windowEl.style.zIndex = state.zIndex;
+}
+
+function bindEvents() {
+  document.addEventListener("click", (event) => {
+    const icon = event.target.closest(".desktop-icon");
+    if (!icon) return;
+    if (icon.dataset.app === "links") openLinks();
+    if (icon.dataset.app === "explorer") openExplorer(icon.dataset.room || "すべて");
+  });
+
+  document.addEventListener("click", (event) => {
+    const close = event.target.closest("[data-window-close]");
+    if (close) {
+      const windowEl = close.closest(".window");
+      state.windows.delete(windowEl.dataset.windowId);
+      windowEl.remove();
+      return;
+    }
+
+    const hide = event.target.closest("[data-window-hide]");
+    if (hide) {
+      hide.closest(".window").classList.add("is-hidden");
+      return;
+    }
+
+    const front = event.target.closest("[data-window-front]");
+    if (front) {
+      bringToFront(front.closest(".window"));
+    }
+  });
 }
 
 function escapeHtml(value) {
@@ -418,54 +510,10 @@ function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("`", "&#096;");
 }
 
-function selectWork(id) {
-  const work = state.works.find((item) => item.id === id);
-  if (!work) return;
-  state.selectedId = work.id;
-  render();
-}
-
-function bindEvents() {
-  document.addEventListener("click", (event) => {
-    const roomButton = event.target.closest("[data-room]");
-    if (roomButton) {
-      state.activeRoom = roomButton.dataset.room;
-      render();
-      document.querySelector("#explorer").scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
-    const workItem = event.target.closest("[data-work-id]");
-    if (workItem) {
-      selectWork(workItem.dataset.workId);
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
-    const workItem = event.target.closest("[data-work-id]");
-    if (workItem) selectWork(workItem.dataset.workId);
-  });
-
-  elements.searchInput.addEventListener("input", (event) => {
-    state.query = event.target.value.trim();
-    render();
-  });
-}
-
-function updateClock() {
-  elements.clock.textContent = new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date());
-}
-
 async function init() {
   bindEvents();
-  updateClock();
-  setInterval(updateClock, 30000);
   state.works = (await loadWorks()).filter((work) => work.status === "public");
-  render();
+  renderDesktop();
 }
 
 init();
