@@ -40,24 +40,16 @@ const LINKS = [
   ["YouTube", "https://www.youtube.com/@modurili"],
 ];
 
-const APP_ICONS = {
-  all: "🗂",
-  folder: "📁",
-  links: "🌐",
-  booth: "🛍",
-  note: "📝",
-  github: "⌘",
-  youtube: "▶",
-  tools: "🧰",
-  assets: "🎞",
-};
-
 const state = {
   works: [],
   selectedIcon: "",
   selectedId: "",
   windows: new Map(),
   zIndex: 20,
+  explorerCount: 0,
+  settings: {
+    theme: "light",
+  },
 };
 
 const elements = {
@@ -155,15 +147,34 @@ function getFileLabel(work) {
   return clean(work.title).slice(0, 1).toUpperCase() || "?";
 }
 
-function getRoomIcon(room) {
+function getRoomIconType(room) {
   const text = clean(room).toLowerCase();
-  if (text.includes("booth")) return APP_ICONS.booth;
-  if (text.includes("note") || text.includes("記録")) return APP_ICONS.note;
-  if (text.includes("github")) return APP_ICONS.github;
-  if (text.includes("youtube")) return APP_ICONS.youtube;
-  if (text.includes("tool") || text.includes("道具")) return APP_ICONS.tools;
-  if (text.includes("素材") || text.includes("asset")) return APP_ICONS.assets;
-  return APP_ICONS.folder;
+  if (text.includes("booth")) return "shop";
+  if (text.includes("note") || text.includes("記録")) return "note";
+  if (text.includes("github")) return "code";
+  if (text.includes("youtube")) return "play";
+  if (text.includes("tool") || text.includes("道具")) return "tools";
+  if (text.includes("素材") || text.includes("asset")) return "media";
+  return "folder";
+}
+
+function iconSvg(type) {
+  const icons = {
+    all: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M9 17h18l5 6h23v27H9z"/><path d="M9 14h17l5 6h24v6H9z"/></svg>`,
+    folder: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 18h18l5 6h25v25H8z"/><path d="M8 15h18l5 6h25v6H8z"/></svg>`,
+    links: `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="23"/><path d="M10 32h44M32 9c7 7 10 15 10 23s-3 16-10 23M32 9C25 16 22 24 22 32s3 16 10 23"/></svg>`,
+    about: `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="22" r="10"/><path d="M14 54c3-12 11-18 18-18s15 6 18 18z"/></svg>`,
+    settings: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M28 7h8l3 9 9-3 5 7-6 7 6 7-5 7-9-3-3 9h-8l-3-9-9 3-5-7 6-7-6-7 5-7 9 3z"/><circle cx="32" cy="32" r="8"/></svg>`,
+    shop: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 25h36l-3 27H17z"/><path d="M22 25c0-9 4-14 10-14s10 5 10 14"/></svg>`,
+    note: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 9h24l8 8v38H16z"/><path d="M40 9v10h10M23 29h18M23 37h18M23 45h12"/></svg>`,
+    code: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M24 20 12 32l12 12M40 20l12 12-12 12M35 15 29 49"/></svg>`,
+    play: `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="16" width="44" height="32" rx="5"/><path d="m28 24 14 8-14 8z"/></svg>`,
+    tools: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M42 10 54 22 42 34l-5-5-18 18-6-6 18-18-5-5z"/><path d="M13 15l9 9"/></svg>`,
+    media: `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="11" y="15" width="42" height="34" rx="3"/><path d="M17 42l10-11 8 8 6-7 7 10z"/><circle cx="43" cy="25" r="4"/></svg>`,
+    file: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h24l8 8v40H18z"/><path d="M42 8v10h10"/></svg>`,
+  };
+
+  return icons[type] || icons.file;
 }
 
 function parseCsv(csvText) {
@@ -233,15 +244,17 @@ function getDesktopApps() {
   const folderApps = getRooms().map((room) => ({
     id: `folder-${slugify(room)}`,
     label: room,
-    icon: getRoomIcon(room),
+    iconType: getRoomIconType(room),
     app: "explorer",
     room,
   }));
 
   return [
-    { id: "all", label: "All Works", icon: APP_ICONS.all, app: "explorer", room: ALL_ROOM },
+    { id: "all", label: "All Works", iconType: "all", app: "explorer", room: ALL_ROOM },
     ...folderApps,
-    { id: "links", label: "Links", icon: APP_ICONS.links, app: "links" },
+    { id: "about", label: "About", iconType: "about", app: "about" },
+    { id: "settings", label: "Settings", iconType: "settings", app: "settings" },
+    { id: "links", label: "Links", iconType: "links", app: "links" },
   ];
 }
 
@@ -251,7 +264,7 @@ function renderDesktop() {
     .map(
       (app) => `
         <button class="desktop-icon${state.selectedIcon === app.id ? " is-selected" : ""}" type="button" data-icon-id="${escapeAttribute(app.id)}" data-app="${escapeAttribute(app.app)}" data-room="${escapeAttribute(app.room || "")}">
-          <span class="desktop-icon-image">${escapeHtml(app.icon)}</span>
+          <span class="desktop-icon-image">${iconSvg(app.iconType)}</span>
           <span class="desktop-icon-label">${escapeHtml(app.label)}</span>
         </button>
       `,
@@ -262,18 +275,21 @@ function renderDesktop() {
 function openAppFromIcon(icon) {
   if (!icon) return;
   if (icon.dataset.app === "links") openLinks();
-  if (icon.dataset.app === "explorer") openExplorer(icon.dataset.room || ALL_ROOM);
+  if (icon.dataset.app === "about") openAbout();
+  if (icon.dataset.app === "settings") openSettings();
+  if (icon.dataset.app === "explorer") openExplorer(icon.dataset.room || ALL_ROOM, { newInstance: true });
 }
 
-function openExplorer(room = ALL_ROOM) {
+function openExplorer(room = ALL_ROOM, options = {}) {
   const title = room === ALL_ROOM ? "All Works" : room;
-  const id = "explorer";
-  const windowEl = ensureWindow(id, title, renderExplorerWindow(room), {
-    width: 900,
-    height: 560,
-    x: 130 + state.windows.size * 22,
-    y: 56 + state.windows.size * 18,
+  const id = options.newInstance ? `explorer-${++state.explorerCount}` : "explorer";
+  const windowEl = ensureWindow(id, title, renderExplorerWindow(room, "thumb", ""), {
+    width: 930,
+    height: 590,
+    x: 120 + state.windows.size * 22,
+    y: 54 + state.windows.size * 18,
   });
+  windowEl.dataset.appType = "explorer";
   bringToFront(windowEl);
   bindExplorerWindow(windowEl);
 }
@@ -284,6 +300,26 @@ function openLinks() {
     height: 340,
     x: 190,
     y: 96,
+  });
+  bringToFront(windowEl);
+}
+
+function openAbout() {
+  const windowEl = ensureWindow("about", "About", renderAboutWindow(), {
+    width: 520,
+    height: 430,
+    x: 170,
+    y: 78,
+  });
+  bringToFront(windowEl);
+}
+
+function openSettings() {
+  const windowEl = ensureWindow("settings", "Settings", renderSettingsWindow(), {
+    width: 620,
+    height: 440,
+    x: 210,
+    y: 92,
   });
   bringToFront(windowEl);
 }
@@ -325,23 +361,22 @@ function ensureWindow(id, title, content, rect) {
   return windowEl;
 }
 
-function renderExplorerWindow(room) {
+function renderExplorerWindow(room, view = "thumb", query = "") {
   const rooms = [ALL_ROOM, ...getRooms()];
-  const works = filterWorks(room, "");
+  const works = filterWorks(room, query);
   const selected = works.find((work) => work.id === state.selectedId) || works[0];
   state.selectedId = selected?.id || "";
 
   return `
-    <div class="explorer-layout" data-explorer-room="${escapeAttribute(room)}">
+    <div class="explorer-layout" data-explorer-room="${escapeAttribute(room)}" data-view="${escapeAttribute(view)}">
       <aside class="sidebar">
-        <div class="tree-header">Quick access</div>
         <div class="folder-list">
           ${rooms
             .map((item) => {
               const label = item === ALL_ROOM ? "All Works" : item;
               return `
                 <button class="folder-button${item === room ? " is-active" : ""}" type="button" data-folder="${escapeAttribute(item)}">
-                  <span class="folder-glyph">${item === ALL_ROOM ? APP_ICONS.all : APP_ICONS.folder}</span>
+                  <span class="folder-glyph">${iconSvg(item === ALL_ROOM ? "all" : "folder")}</span>
                   <span>${escapeHtml(label)}</span>
                   <small>${filterWorks(item, "").length}</small>
                 </button>
@@ -354,17 +389,24 @@ function renderExplorerWindow(room) {
         <div class="command-bar">
           <button type="button" data-folder="${escapeAttribute(ALL_ROOM)}">Home</button>
           <button type="button" data-refresh>Refresh</button>
+          <div class="view-toggle" role="group" aria-label="View">
+            <button class="${view === "thumb" ? "is-active" : ""}" type="button" data-view-mode="thumb">Thumbnails</button>
+            <button class="${view === "list" ? "is-active" : ""}" type="button" data-view-mode="list">List</button>
+          </div>
         </div>
         <div class="file-toolbar">
-          <div class="path-box">
+          <div class="path-box" aria-label="Path">
             <span>Modurili</span>
-            <span>›</span>
+            <span class="path-separator">›</span>
             <span>${escapeHtml(room === ALL_ROOM ? "All Works" : room)}</span>
           </div>
-          <input class="search-box" type="search" placeholder="Search" data-search />
+          <label class="search-shell">
+            <span>${iconSvg("links")}</span>
+            <input class="search-box" type="search" placeholder="Search" value="${escapeAttribute(query)}" data-search />
+          </label>
         </div>
-        <div class="file-list" data-file-list>
-          ${works.map(renderFileRow).join("") || `<p class="empty-message">No items.</p>`}
+        <div class="file-list ${view === "thumb" ? "thumb-view" : "list-view"}" data-file-list>
+          ${works.map((work) => (view === "thumb" ? renderThumbItem(work) : renderFileRow(work))).join("") || `<p class="empty-message">No items.</p>`}
         </div>
       </section>
       <aside class="preview-pane" data-preview>${renderPreview(selected)}</aside>
@@ -372,7 +414,7 @@ function renderExplorerWindow(room) {
   `;
 }
 
-function bindExplorerWindow(windowEl, room) {
+function bindExplorerWindow(windowEl) {
   if (windowEl.dataset.explorerBound === "true") return;
   windowEl.dataset.explorerBound = "true";
 
@@ -390,10 +432,22 @@ function bindExplorerWindow(windowEl, room) {
       return;
     }
 
+    const viewButton = event.target.closest("[data-view-mode]");
+    if (viewButton) {
+      const layout = windowEl.querySelector("[data-explorer-room]");
+      const room = layout?.dataset.explorerRoom || ALL_ROOM;
+      const query = windowEl.querySelector("[data-search]")?.value || "";
+      navigateExplorer(windowEl, room, viewButton.dataset.viewMode, query);
+      return;
+    }
+
     const refresh = event.target.closest("[data-refresh]");
     if (refresh) {
-      const room = windowEl.querySelector("[data-explorer-room]")?.dataset.explorerRoom || ALL_ROOM;
-      navigateExplorer(windowEl, room);
+      const layout = windowEl.querySelector("[data-explorer-room]");
+      const room = layout?.dataset.explorerRoom || ALL_ROOM;
+      const view = layout?.dataset.view || "thumb";
+      const query = windowEl.querySelector("[data-search]")?.value || "";
+      navigateExplorer(windowEl, room, view, query);
       return;
     }
 
@@ -404,42 +458,57 @@ function bindExplorerWindow(windowEl, room) {
     state.selectedId = work.id;
     const fileList = windowEl.querySelector("[data-file-list]");
     const preview = windowEl.querySelector("[data-preview]");
-    fileList.querySelectorAll(".file-row").forEach((item) => item.classList.toggle("is-selected", item.dataset.workId === work.id));
+    fileList.querySelectorAll("[data-work-id]").forEach((item) => item.classList.toggle("is-selected", item.dataset.workId === work.id));
     preview.innerHTML = renderPreview(work);
   });
 
   windowEl.addEventListener("input", (event) => {
     const search = event.target.closest("[data-search]");
     if (!search) return;
-    const room = windowEl.querySelector("[data-explorer-room]")?.dataset.explorerRoom || ALL_ROOM;
+    const layout = windowEl.querySelector("[data-explorer-room]");
+    const room = layout?.dataset.explorerRoom || ALL_ROOM;
+    const view = layout?.dataset.view || "thumb";
     const fileList = windowEl.querySelector("[data-file-list]");
     const preview = windowEl.querySelector("[data-preview]");
     const works = filterWorks(room, search.value);
     const selected = works[0];
     state.selectedId = selected?.id || "";
-    fileList.innerHTML = works.map(renderFileRow).join("") || `<p class="empty-message">No items.</p>`;
+    fileList.className = `file-list ${view === "thumb" ? "thumb-view" : "list-view"}`;
+    fileList.innerHTML = works.map((work) => (view === "thumb" ? renderThumbItem(work) : renderFileRow(work))).join("") || `<p class="empty-message">No items.</p>`;
     preview.innerHTML = renderPreview(selected);
   });
 }
 
-function navigateExplorer(windowEl, room) {
+function navigateExplorer(windowEl, room, view, query = "") {
+  const layout = windowEl.querySelector("[data-explorer-room]");
+  const nextView = view || layout?.dataset.view || "thumb";
   const title = room === ALL_ROOM ? "All Works" : room;
   windowEl.dataset.windowTitle = title;
   windowEl.querySelector(".window-title").textContent = title;
-  windowEl.querySelector(".window-content").innerHTML = renderExplorerWindow(room);
+  windowEl.querySelector(".window-content").innerHTML = renderExplorerWindow(room, nextView, query);
   updateTaskbar();
 }
 
 function renderFileRow(work) {
   return `
     <article class="file-row${state.selectedId === work.id ? " is-selected" : ""}" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
-      <span class="file-icon">${escapeHtml(getFileLabel(work))}</span>
+      <span class="file-icon">${iconSvg("file")}</span>
       <div class="file-title">
         <strong>${escapeHtml(work.title)}</strong>
         <small>${escapeHtml(work.description || getHostname(work.url))}</small>
       </div>
       <span class="file-type">${escapeHtml(work.type)}</span>
       <span class="file-date">${escapeHtml(formatDate(work.date))}</span>
+    </article>
+  `;
+}
+
+function renderThumbItem(work) {
+  return `
+    <article class="thumb-item${state.selectedId === work.id ? " is-selected" : ""}" data-work-id="${escapeAttribute(work.id)}" tabindex="0">
+      ${renderThumbnail(work)}
+      <div class="thumb-title">${escapeHtml(work.title)}</div>
+      <div class="thumb-type">${escapeHtml(work.type)}</div>
     </article>
   `;
 }
@@ -468,7 +537,6 @@ function renderPreview(work) {
 function renderThumbnail(work) {
   const thumbnailUrl = getAutoThumbnailUrl(work);
   const faviconUrl = getFaviconUrl(work.url);
-  const label = getFileLabel(work);
 
   return `
     <div class="thumb-frame${thumbnailUrl ? "" : " is-fallback"}">
@@ -477,7 +545,7 @@ function renderThumbnail(work) {
           ? `<img src="${escapeAttribute(thumbnailUrl)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('is-fallback'); this.remove();" />`
           : ""
       }
-      <span class="fallback-thumb">${escapeHtml(label)}</span>
+      <span class="fallback-thumb">${iconSvg("file")}</span>
       ${faviconUrl ? `<span class="favicon-chip"><img src="${escapeAttribute(faviconUrl)}" alt="" loading="lazy" /></span>` : ""}
     </div>
   `;
@@ -489,6 +557,74 @@ function renderLinksWindow() {
       ${LINKS.map(([label, url]) => `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`).join("")}
     </div>
   `;
+}
+
+function renderAboutWindow() {
+  return `
+    <section class="about-panel">
+      <div class="about-avatar">${iconSvg("about")}</div>
+      <div>
+        <h2>もづりぃ</h2>
+        <p>編集、YMM4素材、便利ツール、制作メモなどを作っています。</p>
+        <p>ここは作ったものへ行くためのポータルです。</p>
+      </div>
+      <dl class="about-specs">
+        <div><dt>Mode</dt><dd>Creator / Editor / Tool maker</dd></div>
+        <div><dt>Main</dt><dd>YMM4, BOOTH, note, GitHub</dd></div>
+        <div><dt>Portal</dt><dd>Modurili OS</dd></div>
+      </dl>
+    </section>
+  `;
+}
+
+function renderSettingsWindow() {
+  const darkChecked = state.settings.theme === "dark" ? "checked" : "";
+  return `
+    <section class="settings-app">
+      <aside class="settings-sidebar">
+        <button class="is-active" type="button">Personalization</button>
+        <button type="button">System</button>
+        <button type="button">About</button>
+      </aside>
+      <div class="settings-main">
+        <h2>Personalization</h2>
+        <div class="setting-card">
+          <div>
+            <strong>Dark mode</strong>
+            <p>Switch the desktop and windows to a darker theme.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-setting-theme ${darkChecked} />
+            <span></span>
+          </label>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function applyTheme(theme) {
+  state.settings.theme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = state.settings.theme;
+  setCookie("modurili_theme", state.settings.theme, 365);
+}
+
+function loadSettings() {
+  applyTheme(getCookie("modurili_theme") || "light");
+}
+
+function setCookie(name, value, days) {
+  const maxAge = days * 24 * 60 * 60;
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const key = `${encodeURIComponent(name)}=`;
+  return document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(key))
+    ?.slice(key.length);
 }
 
 function makeDraggable(windowEl) {
@@ -617,6 +753,8 @@ function bindEvents() {
   elements.startMenu.addEventListener("click", (event) => {
     const app = event.target.closest("[data-start-app]")?.dataset.startApp;
     if (app === "all") openExplorer(ALL_ROOM);
+    if (app === "about") openAbout();
+    if (app === "settings") openSettings();
     if (app === "links") openLinks();
     elements.startMenu.classList.add("is-hidden");
   });
@@ -654,6 +792,12 @@ function bindEvents() {
     const maximize = event.target.closest("[data-window-maximize]");
     if (maximize) {
       toggleMaximize(maximize.closest(".window"));
+      return;
+    }
+
+    const themeToggle = event.target.closest("[data-setting-theme]");
+    if (themeToggle) {
+      applyTheme(themeToggle.checked ? "dark" : "light");
     }
   });
 }
@@ -673,6 +817,7 @@ function escapeAttribute(value) {
 
 async function init() {
   try {
+    loadSettings();
     bindEvents();
     updateClock();
     setInterval(updateClock, 30000);

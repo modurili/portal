@@ -9,11 +9,23 @@
   --line-strong: #9eaaa3;
   --accent: #1d8f68;
   --accent-soft: #dcefe8;
-  --danger: #ef7f78;
-  --warn: #f0cf68;
-  --ok: #67c993;
   --shadow: 0 24px 70px rgba(31, 46, 38, 0.18);
   --shadow-soft: 0 10px 26px rgba(31, 46, 38, 0.11);
+}
+
+:root[data-theme="dark"] {
+  --desktop: #202522;
+  --desktop-grid: rgba(255, 255, 255, 0.055);
+  --window: #262b28;
+  --window-soft: #1e2320;
+  --text: #edf4ef;
+  --muted: #a7b4ad;
+  --line: #3d4640;
+  --line-strong: #65716a;
+  --accent: #68d6ad;
+  --accent-soft: rgba(104, 214, 173, 0.18);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -68,7 +80,7 @@ button {
   grid-auto-columns: 96px;
   gap: 16px 14px;
   width: max-content;
-  max-height: calc(100vh - 56px);
+  max-height: calc(100vh - 98px);
 }
 
 .desktop-icon {
@@ -89,8 +101,8 @@ button {
 .desktop-icon:hover,
 .desktop-icon.is-selected,
 .desktop-icon:focus-visible {
-  background: rgba(255, 255, 255, 0.52);
-  border-color: rgba(29, 143, 104, 0.7);
+  background: color-mix(in srgb, var(--window) 58%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
   outline: 0;
 }
 
@@ -99,17 +111,28 @@ button {
   width: 58px;
   height: 52px;
   place-items: center;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(158, 170, 163, 0.55);
+  background: color-mix(in srgb, var(--window) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-strong) 65%, transparent);
   border-radius: 8px;
   box-shadow: var(--shadow-soft);
-  font-size: 28px;
-  font-weight: 800;
 }
 
-.desktop-icon[data-app="links"] .desktop-icon-image,
-.desktop-icon[data-app="search"] .desktop-icon-image {
-  background: #fff;
+.desktop-icon-image svg,
+.folder-glyph svg,
+.file-icon svg,
+.fallback-thumb svg,
+.search-shell svg,
+.about-avatar svg {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.desktop-icon-image svg {
+  width: 34px;
+  height: 34px;
 }
 
 .desktop-icon-label {
@@ -117,7 +140,7 @@ button {
   max-width: 84px;
   overflow-wrap: anywhere;
   color: var(--text);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--window) 85%, transparent);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
@@ -136,11 +159,11 @@ button {
   min-width: 320px;
   min-height: 260px;
   overflow: hidden;
+  resize: both;
   background: var(--window);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow);
   pointer-events: auto;
-  resize: both;
 }
 
 .window.is-hidden {
@@ -158,7 +181,7 @@ button {
   gap: 10px;
   padding: 0 0 0 10px;
   color: var(--muted);
-  background: linear-gradient(180deg, #ffffff, #edf2ee);
+  background: linear-gradient(180deg, var(--window), var(--window-soft));
   border-bottom: 1px solid var(--line);
   cursor: grab;
   user-select: none;
@@ -167,6 +190,15 @@ button {
 
 .window.is-dragging .window-titlebar {
   cursor: grabbing;
+}
+
+.window-title {
+  flex: 1;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .window-controls {
@@ -184,23 +216,10 @@ button {
   color: var(--text);
   background: transparent;
   border: 0;
-  border-left: 1px solid transparent;
   border-radius: 0;
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
-}
-
-.window-control.close {
-  background: transparent;
-}
-
-.window-control.minimize {
-  background: transparent;
-}
-
-.window-control.zoom {
-  background: transparent;
 }
 
 .window-control.minimize::before {
@@ -217,21 +236,12 @@ button {
 }
 
 .window-control:hover {
-  background: #e7ece8;
+  background: color-mix(in srgb, var(--line) 52%, transparent);
 }
 
 .window-control.close:hover {
   color: #fff;
   background: #c42b1c;
-}
-
-.window-title {
-  overflow: hidden;
-  flex: 1;
-  font-size: 12px;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .window-content {
@@ -262,13 +272,6 @@ button {
   padding: 14px;
 }
 
-.tree-header {
-  padding: 12px 12px 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-
 .folder-list {
   display: grid;
   gap: 2px;
@@ -293,7 +296,7 @@ button {
 
 .folder-button:hover,
 .folder-button.is-active {
-  background: #fff;
+  background: var(--window);
   border-color: var(--line);
 }
 
@@ -304,13 +307,21 @@ button {
 }
 
 .folder-glyph {
+  display: grid;
   width: 22px;
-  text-align: center;
+  height: 22px;
+  place-items: center;
+}
+
+.folder-glyph svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 5;
 }
 
 .file-area {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   min-width: 0;
   min-height: 0;
   padding: 12px;
@@ -318,6 +329,7 @@ button {
 
 .command-bar {
   display: flex;
+  align-items: center;
   gap: 6px;
   margin-bottom: 8px;
   padding-bottom: 8px;
@@ -328,7 +340,7 @@ button {
   min-height: 30px;
   padding: 5px 10px;
   color: var(--text);
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line);
   border-radius: 3px;
   cursor: pointer;
@@ -340,23 +352,44 @@ button {
   border-color: var(--line-strong);
 }
 
+.view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  background: var(--window-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.view-toggle button {
+  border: 0;
+  background: transparent;
+}
+
+.view-toggle button.is-active {
+  background: var(--window);
+  box-shadow: var(--shadow-soft);
+}
+
 .file-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 260px);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
 .path-box {
   display: flex;
+  min-width: 0;
+  min-height: 36px;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
+  padding: 7px 10px;
   overflow: hidden;
   color: var(--muted);
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line);
   border-radius: 3px;
   font-size: 12px;
@@ -365,28 +398,68 @@ button {
   white-space: nowrap;
 }
 
-.search-box {
-  width: min(260px, 42%);
+.path-separator {
+  color: var(--line-strong);
+}
+
+.search-shell {
+  display: flex;
+  min-width: 0;
   min-height: 36px;
-  padding: 7px 10px;
-  color: var(--text);
-  background: #fff;
-  border: 1px solid var(--line-strong);
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  background: var(--window);
+  border: 1px solid var(--line);
   border-radius: 3px;
+}
+
+.search-shell:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search-shell span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  opacity: 0.78;
+}
+
+.search-shell svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 5;
+}
+
+.search-box {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
   outline: 0;
 }
 
-.search-box:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+.file-list {
+  min-height: 0;
+  overflow: auto;
 }
 
-.file-list {
+.file-list.list-view {
   display: grid;
   align-content: start;
   gap: 5px;
-  min-height: 0;
-  overflow: auto;
+}
+
+.file-list.thumb-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 12px;
 }
 
 .file-row {
@@ -396,13 +469,15 @@ button {
   align-items: center;
   min-height: 54px;
   padding: 7px 9px;
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line);
   cursor: default;
 }
 
 .file-row:hover,
-.file-row.is-selected {
+.file-row.is-selected,
+.thumb-item:hover,
+.thumb-item.is-selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -412,12 +487,15 @@ button {
   width: 34px;
   height: 34px;
   place-items: center;
-  color: var(--accent);
   background: var(--accent-soft);
   border: 1px solid var(--line);
   border-radius: 3px;
-  font-size: 13px;
-  font-weight: 800;
+}
+
+.file-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 5;
 }
 
 .file-title {
@@ -427,7 +505,9 @@ button {
 .file-title strong,
 .file-title small,
 .file-type,
-.file-date {
+.file-date,
+.thumb-title,
+.thumb-type {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -440,7 +520,8 @@ button {
 
 .file-title small,
 .file-type,
-.file-date {
+.file-date,
+.thumb-type {
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -448,6 +529,25 @@ button {
 
 .file-title small {
   display: block;
+}
+
+.thumb-item {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  background: var(--window);
+  border: 1px solid var(--line);
+  cursor: default;
+}
+
+.thumb-item .thumb-frame {
+  height: 96px;
+}
+
+.thumb-title {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .preview-card {
@@ -489,7 +589,7 @@ button {
 .tag-list li {
   padding: 3px 8px;
   color: var(--muted);
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 11px;
@@ -503,7 +603,7 @@ button {
   place-items: center;
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(29, 143, 104, 0.14), rgba(21, 27, 24, 0.06)),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 15%, transparent), rgba(21, 27, 24, 0.06)),
     var(--window-soft);
   border: 1px solid var(--line);
 }
@@ -526,9 +626,11 @@ button {
   position: absolute;
   inset: 0;
   place-items: center;
-  color: var(--accent);
-  font-size: 36px;
-  font-weight: 800;
+}
+
+.fallback-thumb svg {
+  width: 48px;
+  height: 48px;
 }
 
 .favicon-chip {
@@ -539,7 +641,7 @@ button {
   width: 30px;
   height: 30px;
   place-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--window) 88%, transparent);
   border: 1px solid var(--line);
 }
 
@@ -554,7 +656,7 @@ button {
   min-height: 36px;
   align-items: center;
   padding: 8px 12px;
-  color: #fff;
+  color: var(--window);
   background: var(--text);
   border-radius: 4px;
   font-size: 13px;
@@ -578,9 +680,161 @@ button {
 }
 
 .link-grid a:hover {
-  color: #fff;
+  color: var(--window);
   background: var(--text);
   border-color: var(--text);
+}
+
+.about-panel {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 18px;
+  padding: 22px;
+}
+
+.about-avatar {
+  display: grid;
+  width: 86px;
+  height: 86px;
+  place-items: center;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.about-panel h2,
+.settings-main h2 {
+  margin: 0 0 8px;
+}
+
+.about-panel p {
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+
+.about-specs {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  margin: 0;
+}
+
+.about-specs div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--window-soft);
+  border: 1px solid var(--line);
+}
+
+.about-specs dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.about-specs dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settings-app {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  height: 100%;
+  min-height: 0;
+  background: var(--window-soft);
+}
+
+.settings-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 12px;
+  border-right: 1px solid var(--line);
+}
+
+.settings-sidebar button {
+  min-height: 36px;
+  padding: 8px 10px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 800;
+}
+
+.settings-sidebar button.is-active,
+.settings-sidebar button:hover {
+  background: var(--window);
+  border-color: var(--line);
+}
+
+.settings-main {
+  padding: 22px;
+}
+
+.setting-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  background: var(--window);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.setting-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.switch {
+  position: relative;
+  display: inline-grid;
+  width: 54px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+}
+
+.switch span {
+  position: relative;
+  display: block;
+  background: var(--line-strong);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.switch span::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  background: var(--window);
+  border-radius: 50%;
+  box-shadow: var(--shadow-soft);
+  transition: transform 160ms ease;
+}
+
+.switch input:checked + span {
+  background: var(--accent);
+}
+
+.switch input:checked + span::before {
+  transform: translateX(24px);
 }
 
 .taskbar {
@@ -594,7 +848,7 @@ button {
   gap: 8px;
   min-height: 46px;
   padding: 6px 8px;
-  background: rgba(243, 247, 244, 0.9);
+  background: color-mix(in srgb, var(--window) 90%, transparent);
   border-top: 1px solid var(--line-strong);
   backdrop-filter: blur(16px);
   box-shadow: 0 -10px 28px rgba(31, 46, 38, 0.1);
@@ -606,7 +860,7 @@ button {
   min-height: 32px;
   padding: 6px 12px;
   color: var(--text);
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line);
   border-radius: 4px;
   cursor: pointer;
@@ -615,7 +869,7 @@ button {
 }
 
 .start-button {
-  color: #fff;
+  color: var(--window);
   background: var(--text);
   border-color: var(--text);
 }
@@ -674,7 +928,7 @@ button {
   position: fixed;
   inset: 24px auto auto 24px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--window);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow-soft);
 }
@@ -694,7 +948,7 @@ button {
     min-height: 100vh;
     height: auto;
     overflow: visible;
-    padding: 18px;
+    padding: 18px 18px 70px;
   }
 
   .desktop-icons {
@@ -725,7 +979,8 @@ button {
     cursor: default;
   }
 
-  .explorer-layout {
+  .explorer-layout,
+  .settings-app {
     grid-template-columns: 1fr;
   }
 
@@ -734,13 +989,16 @@ button {
     display: none;
   }
 
-  .file-toolbar {
-    align-items: stretch;
-    flex-direction: column;
+  .settings-sidebar {
+    display: none;
   }
 
-  .search-box {
-    width: 100%;
+  .file-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .file-list.thumb-view {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .file-row {
